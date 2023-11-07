@@ -17,13 +17,13 @@ end Forward;
 --              flush_if = 1
 --              flush_id = 1
 --      else
---          if(ex.rd = id.rs)
+--          if(ex.rd = id.rs and ex.regwe)
 --              sel_rsd = 01
---          else if (mem.rd = id.rs)
+--          else if (mem.rd = id.rs and mem.regwe)
 --              sel_rsd = 10
---          if(ex.rd = id.rt)
+--          if(ex.rd = id.rt and ex.regwe)
 --              sel_rtd = 01
---          else if (mem.rd = id.rt)
+--          else if (mem.rd = id.rt and mem.regwe)
 --              sel_rtd = 10
 -- if(j(r), jal(r), branch)
 --      flush_id = 1

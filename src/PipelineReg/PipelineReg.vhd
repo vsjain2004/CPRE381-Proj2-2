@@ -14,7 +14,10 @@ entity PipelineReg is
         Dmem : in std_logic_vector(31 downto 0);
         clk : in std_logic;
         reset : in std_logic;
+        flush_if : in std_logic;
+        flush_id : in std_logic;
         o_Inst : out std_logic_vector(31 downto 0);
+        o_Inst_ex : out std_logic_vector(31 downto 0);
         o_PC4_wb : out std_logic_vector(31 downto 0);
         o_ex : out std_logic_vector(7 downto 0);
         o_shamt : out std_logic_vector(4 downto 0);
@@ -33,7 +36,8 @@ entity PipelineReg is
         o_Dmem : out std_logic_vector(31 downto 0);
         o_mem : out std_logic;
         o_wb : out std_logic_vector(6 downto 0);
-        o_halt : out std_logic);
+        o_halt : out std_logic;
+        wb_mem : out std_logic_vector(2 downto 0));
 end PipelineReg;
 
 architecture structural of PipelineReg is
@@ -70,12 +74,17 @@ architecture structural of PipelineReg is
     signal pc4forward3 : std_logic_vector(31 downto 0);
     signal aluforward : std_logic_vector(31 downto 0);
     signal ovforward : std_logic;
+    signal if_reset : std_logic;
+    signal id_reset : std_logic;
 begin
     
     --IF/ID
+    
+    if_reset <= reset or flush_if;
+
     IFID : RegNBit
     port MAP(clk => clk,
-            reset => reset,
+            reset => if_reset,
             we => '1',
             data => Inst,
             o_data => instruction);
@@ -85,17 +94,28 @@ begin
     --PC + 4
     PC4reg : RegNBit
     port MAP(clk => clk,
-            reset => reset,
+            reset => if_reset,
             we => '1',
             data => PC4,
             o_data => pc4forward1);
 
     --ID/EX
+
+    id_reset <= reset or flush_id;
+
+    --Instruction
+    IFID : RegNBit
+    port MAP(clk => clk,
+            reset => id_reset,
+            we => '1',
+            data => instruction,
+            o_data => o_Inst_ex);
+
     --EX controls
     EXControl : RegNBit --sel_y, rs_sel, ivu_sel, astype, shdir, alu_sel_2,1,0
     generic MAP(N => 8)
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => Control(15 downto 8),
             o_data => o_ex);
@@ -103,7 +123,7 @@ begin
     --MEM controls
     MEMControl : dffg --dmem_we
     port MAP(i_CLK => clk,
-            i_RST => reset,
+            i_RST => id_reset,
             i_WE => '1',
             i_D => Control(7),
             o_Q => memforward);
@@ -112,7 +132,7 @@ begin
     WBControl : RegNBit --movz, movn, reg_we, reg_sel_1,0, det_o, halt
     generic MAP(N => 7)
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => Control(6 downto 0),
             o_data => wbforward1);
@@ -121,7 +141,7 @@ begin
     DestReg : RegNBit
     generic MAP(N => 5)
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => rd,
             o_data => rdforward1);
@@ -130,7 +150,7 @@ begin
     DestReg : RegNBit
     generic MAP(N => 5)
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => instruction(25 downto 21),
             o_data => o_rs);
@@ -139,7 +159,7 @@ begin
     DestReg : RegNBit
     generic MAP(N => 5)
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => instruction(20 downto 16),
             o_data => o_rt);
@@ -147,7 +167,7 @@ begin
     --rs data
     rsData : RegNBit
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => rsd,
             o_data => rsdforward1);
@@ -157,7 +177,7 @@ begin
     --rt data
     rtData : RegNBit
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => rtd,
             o_data => rtdforward1);
@@ -168,7 +188,7 @@ begin
     ShiftAmt : RegNBit
     generic MAP(N => 5)
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => instruction(10 downto 6),
             o_data => o_shamt);
@@ -176,7 +196,7 @@ begin
     --imm
     ImmData : RegNBit
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => imm,
             o_data => o_imm);
@@ -184,7 +204,7 @@ begin
     --PC + 4
     PC4reg2 : RegNBit
     port MAP(clk => clk,
-            reset => reset,
+            reset => id_reset,
             we => '1',
             data => pc4forward1,
             o_data => pc4forward2);
@@ -206,6 +226,8 @@ begin
             we => '1',
             data => wbforward1,
             o_data => wbforward2);
+
+    wb_mem <= wbforward2(6 downto 4);
 
     --rd
     DestReg2 : RegNBit

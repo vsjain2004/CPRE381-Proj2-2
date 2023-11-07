@@ -30,4 +30,4 @@ end Forward;
 --      flush_id = 1
 --
 -- if flush_if
---      pc = ex.pc4 (put it into o_rs and select line is 01)
+--      pc = ex.pc4 or mem.pc4 (put it into o_rs and select line is 01) (if ex.all are 0, then mem)

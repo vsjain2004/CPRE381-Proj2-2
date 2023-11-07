@@ -18,6 +18,7 @@ entity PipelineReg is
         flush_id : in std_logic;
         o_Inst : out std_logic_vector(31 downto 0);
         o_Inst_ex : out std_logic_vector(31 downto 0);
+        o_PC4_mem : out std_logic_vector(31 downto 0);
         o_PC4_wb : out std_logic_vector(31 downto 0);
         o_ex : out std_logic_vector(7 downto 0);
         o_shamt : out std_logic_vector(4 downto 0);
@@ -281,6 +282,8 @@ begin
             we => '1',
             data => pc4forward2,
             o_data => pc4forward3);
+
+    o_PC4_mem <= pc4forward3;
 
     --MEM/WB
     --WB Controls

@@ -15,7 +15,7 @@ end Forward;
 -- Therefore
 -- if not(ex.rd = 0 or mem.rd = 0)
 --      if not(if id inst = j, jal, break, or halt)
---          if(ex or mem inst = movn or movz)
+--          if((ex or mem inst = movn or movz) or ex inst = lw)
 --              if(ex.rd = id.rs or ex.rd = id.rt or mem.rd = id.rs or mem.rd = id.rt)
 --                  flush_if = 1
 --                  flush_id = 1

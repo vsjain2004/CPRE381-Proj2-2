@@ -1,18 +1,27 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 
-entity Forward is
-    port();
-end Forward;
+entity HF is
+    port(id_inst : in std_logic_vector(31 downto 0);
+        ex_rd : in std_logic_vector(4 downto 0);
+        mem_rd : in std_logic_vector(4 downto 0);
+        ex_wb : in std_logic_vector(2 downto 0);
+        mem_wb : in std_logic_vector(2 downto 0);
+        lw : in std_logic;
+        branch : in std_logic_vector(3 downto 0);
+        taken_ex : in std_logic;
+        taken_id : in std_logic;
+        clk : in std_logic;
+        flush_if : out std_logic;
+        flush_id : out std_logic;
+        pc_re : out std_logic;
+        o_sel_rsd : out std_logic_vector(1 downto 0);
+        o_sel_rtd : out std_logic_vector(1 downto 0);
+        pc_re_sel : out std_logic);
+end HF;
 
--- Update PipielineReg for the below ops
+-- All outputs go back to zero when clk = 1, also anded by not clock in mips_processor
 
--- Forward when the following
--- 1. Instruction needs something from the reg file (most inst)
--- 2. EX/MEM (higher priority) or MEM/WB (lower priority) is going to write back to that register and data is ready
--- 3. Function in upper pipeline is not movn or movz
--- 
--- Therefore
 -- if not(ex.rd = 0 or mem.rd = 0)
 --      if not(if id inst = j, jal, break, or halt)
 --          if((ex or mem inst = movn or movz) or ex inst = lw)

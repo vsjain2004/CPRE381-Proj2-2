@@ -11,7 +11,8 @@ entity PC is
         reset : in std_logic;
         halt : in std_logic;
         o_PC : out std_logic_vector(31 downto 0);
-        o_PC4 : out std_logic_vector(31 downto 0));
+        o_PC4 : out std_logic_vector(31 downto 0);
+        o_Branch : out std_logic_vector(31 downto 0));
 end PC;
 
 architecture structural of PC is
@@ -82,6 +83,8 @@ begin
             negative => open,
             overflow => open,
             carry => open);
+
+    o_Branch <= braddr;
 
     pc_sel <= pc_sel_1 & pc_sel_0;
     with pc_sel select

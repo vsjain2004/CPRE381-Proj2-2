@@ -5,6 +5,8 @@ entity Forward is
     port();
 end Forward;
 
+-- Update PipielineReg for the below ops
+
 -- Forward when the following
 -- 1. Instruction needs something from the reg file (most inst)
 -- 2. EX/MEM (higher priority) or MEM/WB (lower priority) is going to write back to that register and data is ready
@@ -17,6 +19,7 @@ end Forward;
 --              if(ex.rd = id.rs or ex.rd = id.rt or mem.rd = id.rs or mem.rd = id.rt)
 --                  flush_if = 1
 --                  flush_id = 1
+--                  pc_re = 1 (set pc input linkr to ex.pc4 and pc_sel to 01)
 --         else
 --              if(ex.rd = id.rs and ex.regwe)
 --                  sel_rsd = 01
@@ -26,8 +29,15 @@ end Forward;
 --                  sel_rtd = 01
 --              else if (mem.rd = id.rt and mem.regwe)
 --                  sel_rtd = 10
--- if(j(r), jal(r), branch)
+-- if ((sel_rsd != 00 or sel_rtd != 00) and id inst = jr, jalr)
+--      flush_if = 1
 --      flush_id = 1
---
--- if flush_if
---      pc = ex.pc4 or mem.pc4 (put it into o_rs and select line is 01) (if ex.all are 0, then mem)
+--      pc_re = 1
+-- if(id inst = j, jal)
+--      flush if = 1
+-- if(ex.inst = branch and ex.taken_ex != ex.taken_id)
+--      flush_if = 1
+--      flush_id = 1
+--      pc_re = 1
+--      if(ex.taken_id != 1)
+--          pc_re_sel = 1 (if 1, use ex.CalcBr else ex.pc4)

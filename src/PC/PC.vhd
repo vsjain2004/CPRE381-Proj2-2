@@ -38,6 +38,7 @@ architecture structural of PC is
     end component;
 
     signal pc_o : std_logic_vector(31 downto 0);
+    signal pc_4o : std_logic_vector(31 downto 0);
     signal jumpaddr : std_logic_vector(31 downto 0);
     signal braddr : std_logic_vector(31 downto 0);
     signal pc_in_pre : std_logic_vector(31 downto 0) := x"00400000";
@@ -65,11 +66,13 @@ begin
         port MAP(X => pc_o,
                 Y => x"00000004",
                 AddSub => '0',
-                S => o_PC4,
+                S => pc_4o,
                 zero => open,
                 negative => open,
                 overflow => open,
                 carry => open);
+
+    o_PC4 <= pc_4o;
     
     jumpaddr <= pc_o(31 downto 28) & JAddr & "00";
 
@@ -88,7 +91,7 @@ begin
 
     pc_sel <= pc_sel_1 & pc_sel_0;
     with pc_sel select
-        pc_in_pre <= pc_o when "00",
+        pc_in_pre <= pc_4o when "00",
                  linkr when "01",
                  jumpaddr when "10",
                  braddr when "11",

@@ -222,7 +222,7 @@ architecture structure of MIPS_Processor is
         o_sel_rsd : out std_logic_vector(1 downto 0);
         o_sel_rtd : out std_logic_vector(1 downto 0);
         pc_re_sel : out std_logic);
-  end HF;
+  end component;
 
   signal o_rd : std_logic_vector(4 downto 0);
   signal movz : std_logic;
@@ -307,6 +307,7 @@ architecture structure of MIPS_Processor is
   signal linkr : std_logic_vector(31 downto 0);
   signal pc_1_in : std_logic;
   signal pc_0_in : std_logic;
+  signal nclk : std_logic;
 begin
 
   -- TODO: This is required to be your final input to your instruction memory. This provides a feasible method to externally load the memory module which means that the synthesis tool must assume it knows nothing about the values stored in the instruction memory. If this is not included, much, if not all of the design is optimized out because the synthesis tool will believe the memory to be all zeros.
@@ -441,13 +442,15 @@ begin
                    o_rsd_wb when "11",
                    x"00000000" when others;
 
+  nclk <= not (iCLK);
+
   reg : RegFile
   port MAP(data => s_RegWrData,
           i_rs => inst(25 downto 21),
           i_rt => inst(20 downto 16),
           i_rd => s_RegWrAddr,
           reset => iRST,
-          clk => iCLK,
+          clk => nclk,
           o_rs => o_rs,
           o_rt => o_rt);
 
@@ -518,12 +521,12 @@ begin
   with pc_re select
     pc_1_in <= pc_1 when '0',
                '0' when '1',
-               '0' when others
+               '0' when others;
 
   with pc_re select
   pc_0_in <= pc_0 when '0',
             '1' when '1',
-            '0' when others
+            '0' when others;
 
   progc : PC
   port MAP(linkr => linkr,

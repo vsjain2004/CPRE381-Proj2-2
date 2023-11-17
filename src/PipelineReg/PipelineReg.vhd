@@ -118,7 +118,7 @@ begin
     id_reset <= reset or flush_id;
 
     --Instruction
-    IFID : RegNBit
+    IFID2 : RegNBit
     port MAP(clk => clk,
             reset => id_reset,
             we => '1',
@@ -214,7 +214,7 @@ begin
             o_Q => takenforward);
 
     --Calculated Branch Addr
-    PC4reg2 : RegNBit
+    BrReg : RegNBit
     port MAP(clk => clk,
             reset => id_reset,
             we => '1',
@@ -337,7 +337,7 @@ begin
             o_Q => o_taken_ex);
 
     --Caculated Branch Addr
-    PC4reg2 : RegNBit
+    BrReg2 : RegNBit
     port MAP(clk => clk,
             reset => id_reset,
             we => '1',

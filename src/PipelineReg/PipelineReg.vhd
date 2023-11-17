@@ -8,6 +8,8 @@ entity PipelineReg is
         rd : in std_logic_vector(4 downto 0);
         rsd : in std_logic_vector(31 downto 0);
         rtd : in std_logic_vector(31 downto 0);
+        rsd_new : in std_logic_vector(31 downto 0);
+        rtd_new : in std_logic_vector(31 downto 0);
         imm : in std_logic_vector(31 downto 0);
         CalcBr : in std_logic_vector(31 downto 0);
         branch : in std_logic_vector(3 downto 0);
@@ -94,7 +96,7 @@ begin
     
     --IF/ID
     
-    if_reset <= reset or flush_if;
+    if_reset <= reset or (flush_if and (not clk));
 
     IFID : RegNBit
     port MAP(clk => clk,
@@ -115,7 +117,7 @@ begin
 
     --ID/EX
 
-    id_reset <= reset or flush_id;
+    id_reset <= reset or (flush_id and (not clk));
 
     --Instruction
     IFID2 : RegNBit
@@ -269,7 +271,7 @@ begin
     port MAP(clk => clk,
             reset => reset,
             we => '1',
-            data => rsdforward1,
+            data => rsd_new,
             o_data => rsdforward2);
         
     --rt data
@@ -277,7 +279,7 @@ begin
     port MAP(clk => clk,
             reset => reset,
             we => '1',
-            data => rtdforward1,
+            data => rtd_new,
             o_data => o_rtd_mem);
 
     --ALU data

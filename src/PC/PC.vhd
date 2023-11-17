@@ -40,6 +40,7 @@ architecture structural of PC is
     signal pc_o : std_logic_vector(31 downto 0);
     signal pc_4o : std_logic_vector(31 downto 0);
     signal jumpaddr : std_logic_vector(31 downto 0);
+    signal jumpaddr2 : std_logic_vector(31 downto 0);
     signal braddr : std_logic_vector(31 downto 0);
     signal pc_in_pre : std_logic_vector(31 downto 0) := x"00400000";
     signal pc_in : std_logic_vector(31 downto 0);
@@ -76,6 +77,16 @@ begin
     
     jumpaddr <= pc_o(31 downto 28) & JAddr & "00";
 
+    Sub1 : CLA_32
+    port MAP(X => jumpaddr,
+            Y => x"00000004",
+            AddSub => '1',
+            S => jumpaddr2,
+            zero => open,
+            negative => open,
+            overflow => open,
+            carry => open);
+
     X_2 <= BAddr(29 downto 0) & "00";
     Add2 : CLA_32
     port MAP(X => X_2,
@@ -93,7 +104,7 @@ begin
     with pc_sel select
         pc_in_pre <= pc_4o when "00",
                  linkr when "01",
-                 jumpaddr when "10",
+                 jumpaddr2 when "10",
                  braddr when "11",
                  x"FFFFFFFC" when others;
 

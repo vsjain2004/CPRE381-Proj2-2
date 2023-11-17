@@ -16,6 +16,7 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
 
 library work;
 use work.MIPS_types.all;
@@ -152,6 +153,8 @@ architecture structure of MIPS_Processor is
         rd : in std_logic_vector(4 downto 0);
         rsd : in std_logic_vector(31 downto 0);
         rtd : in std_logic_vector(31 downto 0);
+        rsd_new : in std_logic_vector(31 downto 0);
+        rtd_new : in std_logic_vector(31 downto 0);
         imm : in std_logic_vector(31 downto 0);
         CalcBr : in std_logic_vector(31 downto 0);
         branch : in std_logic_vector(3 downto 0);
@@ -345,6 +348,8 @@ begin
           rd => rd,
           rsd => o_rs,
           rtd => o_rt,
+          rsd_new => x_pre,
+          rtd_new => y_pre,
           imm => ext_res,
           CalcBr => CalcBr,
           branch => branch,
@@ -514,7 +519,7 @@ begin
   pc_0 <= pc_sel_0 or i_taken_id;
 
   with pc_re select
-    linkr <= o_rs when '0',
+    linkr <= std_logic_vector(unsigned(o_rs) - 4) when '0',
              o_Branch when '1',
              x"00000000" when others;
 

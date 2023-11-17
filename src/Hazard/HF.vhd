@@ -96,21 +96,21 @@ begin
 
     if_5 <= (sel_rsd_pre(0) or sel_rsd_pre(1) or sel_rtd_pre(0) or sel_rtd_pre(1)) and (id_jr or id_jalr);
 
-    flush_if_pre <= '1' when ((if_1 and if_2 and if_3 and if_4) or if_5 or id_j or id_jal or (branching and (taken_ex xor taken_id))) else
+    flush_if_pre <= '1' when ((if_1 and if_2 and if_3 and if_4) or if_5 or id_j or id_jal or id_jr or id_jalr or (branching and (taken_ex xor taken_id))) else
                     '0' when others;
 
-    flush_id_pre <= '1' when ((if_1 and if_2 and if_3 and if_4) or if_5 or id_j or id_jal or (branching and (taken_ex xor taken_id))) else
+    flush_id_pre <= '1' when ((if_1 and if_2 and if_3 and if_4) or if_5 or (branching and (taken_ex xor taken_id))) else
                     '0' when others;
 
-    pc_re_pre <= '1' when ((if_1 and if_2 and if_3 and if_4) or if_5 or id_j or id_jal or (branching and (taken_ex xor taken_id))) else
+    pc_re_pre <= '1' when ((if_1 and if_2 and if_3 and if_4) or if_5 or (branching and (taken_ex xor taken_id))) else
                  '0' when others;
 
-    pc_re_sel_pre <= '1' when (branching and (taken_ex xor taken_id) and (not taken_id)) else
+    pc_re_sel_pre <= '1' when ((branching and (taken_ex xor taken_id) and (not taken_id)) or ((if_1 and if_2 and if_3 and if_4) and (mem_wb(2) or mem_wb(1)) and branching and taken_ex)) else
                      '0' when others;
 
 end mixed;
 
--- All outputs go back to zero when clk = 1, also anded by not clock in mips_processor
+-- All outputs go back to zero when clk = 1
 
 -- if not(ex.rd = 0 or mem.rd = 0)
 --      if not(if id inst = j, jal, break, or halt)
@@ -119,6 +119,8 @@ end mixed;
 --                  flush_if = 1
 --                  flush_id = 1
 --                  pc_re = 1 (set pc input linkr to ex.pc4 and pc_sel to 01)
+--                  if(mem inst = movn or movz and ex inst branch and ex.taken_ex)
+--                      pc_re_sel = 1
 --         else
 --              if(ex.rd = id.rs and ex.regwe)
 --                  sel_rsd = 01
@@ -132,7 +134,7 @@ end mixed;
 --      flush_if = 1
 --      flush_id = 1
 --      pc_re = 1
--- if(id inst = j, jal)
+-- if(id inst = jump)
 --      flush if = 1
 -- if(ex.inst = branch and ex.taken_ex != ex.taken_id)
 --      flush_if = 1

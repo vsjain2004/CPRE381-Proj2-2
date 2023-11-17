@@ -23,14 +23,11 @@ entity PipelineReg is
         taken_ex : in std_logic;
         o_Inst : out std_logic_vector(31 downto 0);
         o_Inst_ex : out std_logic_vector(31 downto 0);
-        o_PC4_mem : out std_logic_vector(31 downto 0);
         o_PC4_wb : out std_logic_vector(31 downto 0);
         o_ex : out std_logic_vector(7 downto 0);
         o_shamt : out std_logic_vector(4 downto 0);
         o_rd : out std_logic_vector(4 downto 0);
         o_rd_mem : out std_logic_vector(4 downto 0);
-        o_rs : out std_logic_vector(4 downto 0);
-        o_rt : out std_logic_vector(4 downto 0);
         o_rsd_ex : out std_logic_vector(31 downto 0);
         o_rsd_wb : out std_logic_vector(31 downto 0);
         o_rtd_ex : out std_logic_vector(31 downto 0);
@@ -49,7 +46,8 @@ entity PipelineReg is
         o_taken_ex : out std_logic;
         o_taken_id : out std_logic;
         o_Branch : out std_logic_vector(31 downto 0);
-        o_brinst : out std_logic_vector(3 downto 0));
+        o_brinst_ex : out std_logic_vector(3 downto 0);
+        o_brinst_mem : out std_logic_vector(3 downto 0));
 end PipelineReg;
 
 architecture structural of PipelineReg is
@@ -91,6 +89,7 @@ architecture structural of PipelineReg is
     signal takenforward : std_logic;
     signal br_o : std_logic_vector(31 downto 0);
     signal brforward : std_logic_vector(31 downto 0);
+    signal branchforward : std_logic_vector(3 downto 0);
 begin
     
     --IF/ID
@@ -160,24 +159,6 @@ begin
             we => '1',
             data => rd,
             o_data => rdforward1);
-
-    --rs
-    DestReg : RegNBit
-    generic MAP(N => 5)
-    port MAP(clk => clk,
-            reset => id_reset,
-            we => '1',
-            data => instruction(25 downto 21),
-            o_data => o_rs);
-
-    --rt
-    DestReg : RegNBit
-    generic MAP(N => 5)
-    port MAP(clk => clk,
-            reset => id_reset,
-            we => '1',
-            data => instruction(20 downto 16),
-            o_data => o_rt);
     
     --rs data
     rsData : RegNBit
@@ -247,7 +228,9 @@ begin
             reset => id_reset,
             we => '1',
             data => branch,
-            o_data => o_brinst);   
+            o_data => branchforward);
+
+    o_brinst_ex <= branchforward;
 
     --EX/MEM
     --MEM Controls
@@ -323,11 +306,19 @@ begin
             data => pc4forward2,
             o_data => pc4forward3);
 
-    o_PC4_mem <= pc4forward3;
     with wbforward2(3) select
         wd_mem <= aluforward when '0',
                   pc4forward3 when '1',
                   x"00000000" when others;
+
+    --Branch Control
+    BrCtl2 : RegNBit
+    generic MAP(N => 4)
+    port MAP(clk => clk,
+            reset => id_reset,
+            we => '1',
+            data => branchforward,
+            o_data => o_brinst_mem);
 
     --Branch taken in ID
     IDTaken2 : dffg

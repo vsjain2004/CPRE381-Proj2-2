@@ -1,5 +1,6 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
 
 entity PC is
     port(linkr : in std_logic_vector(31 downto 0);
@@ -38,6 +39,7 @@ architecture structural of PC is
     end component;
 
     signal pc_o : std_logic_vector(31 downto 0);
+    signal pcn8 : std_logic_vector(31 downto 0);
     signal pc_4o : std_logic_vector(31 downto 0);
     signal jumpaddr : std_logic_vector(31 downto 0);
     signal jumpaddr2 : std_logic_vector(31 downto 0);
@@ -74,8 +76,8 @@ begin
                 carry => open);
 
     o_PC4 <= pc_4o;
-    
-    jumpaddr <= pc_o(31 downto 28) & JAddr & "00";
+    pcn8 <= std_logic_vector(unsigned(pc_o) - 8);
+    jumpaddr <= pcn8(31 downto 28) & JAddr & "00";
 
     Sub1 : CLA_32
     port MAP(X => jumpaddr,
@@ -90,7 +92,7 @@ begin
     X_2 <= BAddr(29 downto 0) & "00";
     Add2 : CLA_32
     port MAP(X => X_2,
-            Y => pc_o,
+            Y => pcn8,
             AddSub => '0',
             S => braddr,
             zero => open,
@@ -98,7 +100,10 @@ begin
             overflow => open,
             carry => open);
 
-    o_Branch <= braddr;
+    with pc_sel_1 select
+        o_Branch <= linkr when '0',
+                    braddr when '1',
+                    x"00000000" when others;
 
     pc_sel <= pc_sel_1 & pc_sel_0;
     with pc_sel select

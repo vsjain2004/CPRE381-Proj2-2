@@ -149,7 +149,7 @@ architecture structure of MIPS_Processor is
   component PipelineReg is
     port(Inst : in std_logic_vector(31 downto 0);
         PC4 : in std_logic_vector(31 downto 0);
-        Control : in std_logic_vector(15 downto 0);
+        Control : in std_logic_vector(17 downto 0);
         rd : in std_logic_vector(4 downto 0);
         rsd : in std_logic_vector(31 downto 0);
         rtd : in std_logic_vector(31 downto 0);
@@ -166,12 +166,12 @@ architecture structure of MIPS_Processor is
         flush_if : in std_logic;
         flush_id : in std_logic;
         pc_re_sel : in std_logic;
-        taken_id : in std_logic;
         taken_ex : in std_logic;
+        jump : in std_logic_vector(1 downto 0);
         o_Inst : out std_logic_vector(31 downto 0);
         o_Inst_ex : out std_logic_vector(31 downto 0);
         o_PC4_wb : out std_logic_vector(31 downto 0);
-        o_ex : out std_logic_vector(7 downto 0);
+        o_ex : out std_logic_vector(9 downto 0);
         o_shamt : out std_logic_vector(4 downto 0);
         o_rd : out std_logic_vector(4 downto 0);
         o_rd_mem : out std_logic_vector(4 downto 0);
@@ -191,10 +191,10 @@ architecture structure of MIPS_Processor is
         o_lw_mem : out std_logic;
         wd_mem : out std_logic_vector(31 downto 0);
         o_taken_ex : out std_logic;
-        o_taken_id : out std_logic;
         o_Branch : out std_logic_vector(31 downto 0);
         o_brinst_ex : out std_logic_vector(3 downto 0);
-        o_brinst_mem : out std_logic_vector(3 downto 0));
+        o_brinst_mem : out std_logic_vector(3 downto 0);
+        o_jump : out std_logic_vector(1 downto 0));
   end component;
 
   component CLA_32
@@ -217,7 +217,7 @@ architecture structure of MIPS_Processor is
         lw : in std_logic;
         branch : in std_logic_vector(3 downto 0);
         taken_ex : in std_logic;
-        taken_id : in std_logic;
+        jump : in std_logic_vector(1 downto 0);
         clk : in std_logic;
         flush_if : out std_logic;
         flush_id : out std_logic;
@@ -257,10 +257,7 @@ architecture structure of MIPS_Processor is
   signal x : std_logic_vector(31 downto 0);
   signal y : std_logic_vector(31 downto 0);
   signal shamt : std_logic_vector(4 downto 0);
-  signal z_id : std_logic;
   signal z_wb : std_logic;
-  signal neg : std_logic;
-  signal o : std_logic;
   signal pc_1 : std_logic;
   signal pc_0 : std_logic;
   signal pc_en : std_logic;
@@ -271,7 +268,7 @@ architecture structure of MIPS_Processor is
   signal rd : std_logic_vector(4 downto 0);
   signal ov_in : std_logic;
   signal ov_out : std_logic;
-  signal o_ex : std_logic_vector(7 downto 0);
+  signal o_ex : std_logic_vector(9 downto 0);
   signal o_alu : std_logic_vector(31 downto 0);
   signal o_shamt : std_logic_vector(4 downto 0);
   signal o_rsd_ex : std_logic_vector(31 downto 0);
@@ -282,7 +279,7 @@ architecture structure of MIPS_Processor is
   signal alu_wb : std_logic_vector(31 downto 0);
   signal pc4_wb : std_logic_vector(31 downto 0);
   signal dmem_wb : std_logic_vector(31 downto 0);
-  signal control_in : std_logic_vector(15 downto 0);
+  signal control_in : std_logic_vector(17 downto 0);
   signal flush_if : std_logic;
   signal flush_id : std_logic;
   signal lw : std_logic;
@@ -290,9 +287,7 @@ architecture structure of MIPS_Processor is
   signal CalcBr : std_logic_vector(31 downto 0);
   signal pc_re_sel : std_logic;
   signal mem_wb : std_logic_vector(2 downto 0);
-  signal i_taken_id : std_logic;
   signal i_taken_ex : std_logic;
-  signal o_taken_id : std_logic;
   signal o_taken_ex : std_logic;
   signal o_brinst_ex : std_logic_vector(3 downto 0);
   signal o_brinst_mem : std_logic_vector(3 downto 0);
@@ -311,6 +306,10 @@ architecture structure of MIPS_Processor is
   signal pc_1_in : std_logic;
   signal pc_0_in : std_logic;
   signal nclk : std_logic;
+  signal jmp_in : std_logic_vector(1 downto 0);
+  signal jump : std_logic;
+  signal jumpr : std_logic;
+  signal jump_ex : std_logic_vector(1 downto 0);
 begin
 
   -- TODO: This is required to be your final input to your instruction memory. This provides a feasible method to externally load the memory module which means that the synthesis tool must assume it knows nothing about the values stored in the instruction memory. If this is not included, much, if not all of the design is optimized out because the synthesis tool will believe the memory to be all zeros.
@@ -361,8 +360,8 @@ begin
           flush_if => flush_if,
           flush_id => flush_id,
           pc_re_sel => pc_re_sel,
-          taken_id => i_taken_id,
           taken_ex => i_taken_ex,
+          jump => jmp_in,
           o_Inst => inst,
           o_Inst_ex => o_Inst_ex,
           o_PC4_wb => pc4_wb,
@@ -386,10 +385,10 @@ begin
           o_lw_mem => lw,
           wd_mem => wd_mem,
           o_taken_ex => o_taken_ex,
-          o_taken_id => o_taken_id,
           o_Branch => o_Branch,
           o_brinst_ex => o_brinst_ex,
-          o_brinst_mem => o_brinst_mem);
+          o_brinst_mem => o_brinst_mem,
+          o_jump => jump_ex);
 
   s_Halt <= o_wb(0);
   oALUOut <= alu_wb;
@@ -424,7 +423,8 @@ begin
           det_o => det_o,
           halt => halt);
 
-  control_in <= sel_y & rs_sel & ivu_sel & astype & shdir & alu_sel_2 & alu_sel_1 & alu_sel_0 & dmem_we & movz & movn & reg_we & reg_sel_1 & reg_sel_0 & det_o & halt;
+  control_in <= pc_sel_1 & pc_sel_0 & sel_y & rs_sel & ivu_sel & astype & shdir & alu_sel_2 & alu_sel_1 & alu_sel_0 & dmem_we & movz & movn & reg_we & reg_sel_1 & reg_sel_0 & det_o & halt;
+  branch <= beq & bne & blez & bgtz;
 
   Extender: extend1632
   port MAP(data => inst(15 downto 0),
@@ -502,24 +502,14 @@ begin
 
   s_Ovfl <= ov_out and o_wb(1);
   i_taken_ex <= (o_brinst_ex(3) and z_ex) or (o_brinst_ex(2) and (not z_ex)) or (o_brinst_ex(1) and (z_ex or (neg_ex xor ov_in))) or (o_brinst_ex(0) and ((not z_ex) and (not (neg_ex xor ov_in))));
-
-  Comp : CLA_32
-  port MAP(X => o_rs,
-          Y => o_rt,
-          AddSub => '1',
-          S => open,
-          zero => z_id,
-          negative => neg,
-          overflow => o,
-          carry => open);
-
-  branch <= (beq & bne & blez & bgtz);
-  i_taken_id <= (beq and z_id) or (bne and (not z_id)) or (blez and (z_id or (neg xor o))) or (bgtz and ((not z_id) and (not (neg xor o))));
-  pc_1 <= pc_sel_1 or i_taken_id;
-  pc_0 <= pc_sel_0 or i_taken_id;
+  pc_1 <= o_ex(9) or i_taken_ex;
+  pc_0 <= o_ex(8) or i_taken_ex;
+  jump <= ((not o_Inst_ex(31)) and (not o_Inst_ex(30)) and (not o_Inst_ex(29)) and (not o_Inst_ex(28)) and o_Inst_ex(27) and (not o_Inst_ex(26))) or ((not o_Inst_ex(31)) and (not o_Inst_ex(30)) and (not o_Inst_ex(29)) and (not o_Inst_ex(28)) and o_Inst_ex(27) and o_Inst_ex(26)) or ((not o_Inst_ex(31)) and (not o_Inst_ex(30)) and (not o_Inst_ex(29)) and (not o_Inst_ex(28)) and (not o_Inst_ex(27)) and (not o_Inst_ex(26)) and (not o_Inst_ex(5)) and (not o_Inst_ex(4)) and o_Inst_ex(3) and (not o_Inst_ex(2)) and (not o_Inst_ex(1)) and (not o_Inst_ex(0))) or ((not o_Inst_ex(31)) and (not o_Inst_ex(30)) and (not o_Inst_ex(29)) and (not o_Inst_ex(28)) and (not o_Inst_ex(27)) and (not o_Inst_ex(26)) and (not o_Inst_ex(5)) and (not o_Inst_ex(4)) and o_Inst_ex(3) and (not o_Inst_ex(2)) and (not o_Inst_ex(1)) and o_Inst_ex(0));
+  jumpr <= ((not o_Inst_ex(31)) and (not o_Inst_ex(30)) and (not o_Inst_ex(29)) and (not o_Inst_ex(28)) and (not o_Inst_ex(27)) and (not o_Inst_ex(26)) and (not o_Inst_ex(5)) and (not o_Inst_ex(4)) and o_Inst_ex(3) and (not o_Inst_ex(2)) and (not o_Inst_ex(1)) and (not o_Inst_ex(0))) or ((not o_Inst_ex(31)) and (not o_Inst_ex(30)) and (not o_Inst_ex(29)) and (not o_Inst_ex(28)) and (not o_Inst_ex(27)) and (not o_Inst_ex(26)) and (not o_Inst_ex(5)) and (not o_Inst_ex(4)) and o_Inst_ex(3) and (not o_Inst_ex(2)) and (not o_Inst_ex(1)) and o_Inst_ex(0));
+  jmp_in <= jumpr & jump;
 
   with pc_re select
-    linkr <= std_logic_vector(unsigned(o_rs) - 4) when '0',
+    linkr <= x_pre when '0',
              o_Branch when '1',
              x"00000000" when others;
 
@@ -535,8 +525,8 @@ begin
 
   progc : PC
   port MAP(linkr => linkr,
-          JAddr => inst(25 downto 0),
-          BAddr => ext_res,
+          JAddr => o_Inst_ex(25 downto 0),
+          BAddr => o_imm,
           pc_sel_1 => pc_1_in,
           pc_sel_0 => pc_0_in,
           clk => iCLK,
@@ -556,7 +546,7 @@ begin
           lw => lw,
           branch => o_brinst_mem,
           taken_ex => o_taken_ex,
-          taken_id => o_taken_id,
+          jump => jump_ex,
           clk => iCLK,
           flush_if => flush_if,
           flush_id => flush_id,

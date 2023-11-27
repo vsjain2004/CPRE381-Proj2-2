@@ -10,7 +10,7 @@ entity HF is
         lw : in std_logic;
         branch : in std_logic_vector(3 downto 0);
         taken_ex : in std_logic;
-        taken_id : in std_logic;
+        jump : in std_logic_vector(1 downto 0);
         clk : in std_logic;
         flush_if : out std_logic;
         flush_id : out std_logic;
@@ -24,16 +24,12 @@ architecture mixed of HF is
 
     signal ex_rd_z : std_logic;
     signal mem_rd_z : std_logic;
-    signal id_j : std_logic;
-    signal id_jal : std_logic;
     signal id_break : std_logic;
     signal id_halt : std_logic;
     signal ex_rd_rs : std_logic;
     signal ex_rd_rt : std_logic;
     signal mem_rd_rs : std_logic;
     signal mem_rd_rt : std_logic;
-    signal id_jr : std_logic;
-    signal id_jalr : std_logic;
     signal if_1 : std_logic;
     signal if_2 : std_logic;
     signal if_3 : std_logic;
@@ -51,22 +47,31 @@ begin
 
     ex_rd_z <= not (ex_rd(0) or ex_rd(1) or ex_rd(2) or ex_rd(3) or ex_rd(4));
     mem_rd_z <= not (mem_rd(0) or mem_rd(1) or mem_rd(2) or mem_rd(3) or mem_rd(4));
-    id_j <= (not id_inst(31)) and (not id_inst(30)) and (not id_inst(29)) and (not id_inst(28)) and id_inst(27) and (not id_inst(26));
-    id_jal <= (not id_inst(31)) and (not id_inst(30)) and (not id_inst(29)) and (not id_inst(28)) and id_inst(27) and id_inst(26);
     id_break <= (not id_inst(31)) and (not id_inst(30)) and (not id_inst(29)) and (not id_inst(28)) and id_inst(27) and (not id_inst(26)) and (not id_inst(5)) and (not id_inst(4)) and id_inst(3) and id_inst(2) and (not id_inst(1)) and id_inst(0);
     id_halt <= (not id_inst(31)) and id_inst(30) and (not id_inst(29)) and id_inst(28) and (not id_inst(27)) and (not id_inst(26));
     ex_rd_rs <= ex_wb(0) and (ex_rd(0) xnor id_inst(21)) and (ex_rd(1) xnor id_inst(22)) and (ex_rd(2) xnor id_inst(23)) and (ex_rd(3) xnor id_inst(24)) and (ex_rd(4) xnor id_inst(25));
     ex_rd_rt <= ex_wb(0) and (ex_rd(0) xnor id_inst(16)) and (ex_rd(1) xnor id_inst(17)) and (ex_rd(2) xnor id_inst(18)) and (ex_rd(3) xnor id_inst(19)) and (ex_rd(4) xnor id_inst(20));
     mem_rd_rs <= mem_wb(0) and (mem_rd(0) xnor id_inst(21)) and (mem_rd(1) xnor id_inst(22)) and (mem_rd(2) xnor id_inst(23)) and (mem_rd(3) xnor id_inst(24)) and (mem_rd(4) xnor id_inst(25));
     mem_rd_rt <= mem_wb(0) and (mem_rd(0) xnor id_inst(16)) and (mem_rd(1) xnor id_inst(17)) and (mem_rd(2) xnor id_inst(18)) and (mem_rd(3) xnor id_inst(19)) and (mem_rd(4) xnor id_inst(20));
-    id_jr <= (not id_inst(31)) and (not id_inst(30)) and (not id_inst(29)) and (not id_inst(28)) and (not id_inst(27)) and (not id_inst(26)) and (not id_inst(5)) and (not id_inst(4)) and id_inst(3) and (not id_inst(2)) and (not id_inst(1)) and (not id_inst(0));
-    id_jalr <= (not id_inst(31)) and (not id_inst(30)) and (not id_inst(29)) and (not id_inst(28)) and (not id_inst(27)) and (not id_inst(26)) and (not id_inst(5)) and (not id_inst(4)) and id_inst(3) and (not id_inst(2)) and (not id_inst(1)) and id_inst(0);
     if_1 <= not(ex_rd_z and mem_rd_z);
-    if_2 <= not (id_j or id_jal or id_break or id_halt);
-    if_3 <= ex_wb(2) or ex_wb(1) or mem_wb(2) or mem_wb(1) or (lw and (ex_rd_rs or ex_rd_rt));
+    if_2 <= not (id_break or id_halt);
+    if_3 <= (ex_wb(2) or ex_wb(1) or mem_wb(2) or mem_wb(1) or (lw and (ex_rd_rs or ex_rd_rt))) and (not jump(0));
     if_4 <= ex_rd_rs or ex_rd_rt or mem_rd_rs or mem_rd_rt;
     branching <= branch(0) or branch(1) or branch(2) or branch(3);
-    
+
+    sel_rsd_pre <= "01" when (if_1 and if_2 and (not if_3) and ex_rd_rs) else
+               "10" when (if_1 and if_2 and (not if_3) and mem_rd_rs) else
+               "00";
+
+    sel_rtd_pre <= "01" when (if_1 and if_2 and (not if_3) and ex_rd_rt) else
+               "10" when (if_1 and if_2 and (not if_3) and mem_rd_rt) else
+               "00";
+
+    flush_if_pre <= (if_1 and if_2 and if_3 and if_3 and if_4) or jump(0) or (branching and taken_ex);
+    flush_id_pre <= (if_1 and if_2 and if_3 and if_3 and if_4) or jump(0) or (branching and taken_ex);
+    pc_re_pre <= (if_1 and if_2 and if_3 and if_3 and if_4) or jump(1);
+    pc_re_sel_pre <= (if_1 and if_2 and if_3 and if_3 and if_4 and ((mem_wb(2) or mem_wb(1)) and branching and taken_ex)) or jump(1);
+
     output_reset: process(clk, flush_if_pre) --flush_if_pre, flush_id_pre, pc_re_pre, sel_rsd_pre, sel_rtd_pre, pc_re_sel_pre
     begin
         if (clk) then
@@ -83,7 +88,7 @@ begin
         if (clk) then
             flush_id <= '0';
         else
-            if(not(flush_id_pre'stable(10 ps) and (not flush_id'stable(10 ps))) and not(flush_id_pre'stable(10 ps) nor flush_id'stable(10 ps))) then 
+            if(flush_id_pre'stable(10 ps)) then
                 flush_id <= flush_id_pre;
             end if;
         end if;
@@ -129,35 +134,12 @@ begin
         end if;
     end process output_reset5;
 
-    sel_rsd_pre <= "01" when (if_1 and if_2 and (not if_3) and ex_rd_rs) else
-                   "10" when (if_1 and if_2 and (not if_3) and mem_rd_rs) else
-                   "00";
-
-    sel_rtd_pre <= "01" when (if_1 and if_2 and (not if_3) and ex_rd_rt) else
-                   "10" when (if_1 and if_2 and (not if_3) and mem_rd_rt) else
-                   "00";
-
-    if_5 <= (sel_rsd_pre(0) or sel_rsd_pre(1) or sel_rtd_pre(0) or sel_rtd_pre(1)) and (id_jr or id_jalr);
-
-    flush_if_pre <= '1' when ((if_1 and if_2 and if_3 and if_4) or if_5 or id_j or id_jal or id_jr or id_jalr or (branching and (taken_ex xor taken_id))) else
-                    '0';
-
-    flush_id_pre <= '1' when ((if_1 and if_2 and if_3 and if_4) or if_5 or (branching and (taken_ex or taken_id))) else
-                    '0';
-
-    pc_re_pre <= '1' when ((if_1 and if_2 and if_3 and if_4) or if_5 or (branching and (taken_ex xor taken_id))) else
-                 '0';
-
-    pc_re_sel_pre <= '1' when ((branching and (taken_ex or taken_id) and (not taken_id)) or ((if_1 and if_2 and if_3 and if_4) and (mem_wb(2) or mem_wb(1)) and branching and taken_ex)) else
-                     '0';
 
 end mixed;
 
--- All outputs go back to zero when clk = 1
-
 -- if not(ex.rd = 0 and mem.rd = 0)
---      if not(if id inst = j, jal, break, or halt)
---          if((ex or mem inst = movn or movz) or ex inst = lw)
+--      if not(if id inst = break, or halt)
+--          if(((ex or mem inst = movn or movz) or ex inst = lw) and not jump)
 --              if(ex.rd = id.rs or ex.rd = id.rt or mem.rd = id.rs or mem.rd = id.rt)
 --                  flush_if = 1
 --                  flush_id = 1
@@ -173,15 +155,11 @@ end mixed;
 --                  sel_rtd = 01
 --              else if (mem.rd = id.rt and mem.regwe)
 --                  sel_rtd = 10
--- if ((sel_rsd != 00 or sel_rtd != 00) and id inst = jr, jalr)
---      flush_if = 1
---      flush_id = 1
---      pc_re = 1
--- if(id inst = jump)
+-- if(ex inst = jump)
 --      flush if = 1
--- if(ex.inst = branch nad ex.taken_ex != ex.taken_id)
---      flush_if = 1
 --      flush_id = 1
 --      pc_re = 1
---      if(ex.taken_id != 1)
---          pc_re_sel = 1 (if 1, use ex.CalcBr else ex.pc4)
+--      pc_re_sel = 1
+-- if(ex.inst = branch and ex.taken_ex)
+--      flush_if = 1
+--      flush_id = 1

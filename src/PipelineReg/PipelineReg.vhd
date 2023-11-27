@@ -4,7 +4,7 @@ use IEEE.std_logic_1164.all;
 entity PipelineReg is
     port(Inst : in std_logic_vector(31 downto 0);
         PC4 : in std_logic_vector(31 downto 0);
-        Control : in std_logic_vector(15 downto 0);
+        Control : in std_logic_vector(17 downto 0);
         rd : in std_logic_vector(4 downto 0);
         rsd : in std_logic_vector(31 downto 0);
         rtd : in std_logic_vector(31 downto 0);
@@ -21,12 +21,12 @@ entity PipelineReg is
         flush_if : in std_logic;
         flush_id : in std_logic;
         pc_re_sel : in std_logic;
-        taken_id : in std_logic;
         taken_ex : in std_logic;
+        jump : in std_logic_vector(1 downto 0);
         o_Inst : out std_logic_vector(31 downto 0);
         o_Inst_ex : out std_logic_vector(31 downto 0);
         o_PC4_wb : out std_logic_vector(31 downto 0);
-        o_ex : out std_logic_vector(7 downto 0);
+        o_ex : out std_logic_vector(9 downto 0);
         o_shamt : out std_logic_vector(4 downto 0);
         o_rd : out std_logic_vector(4 downto 0);
         o_rd_mem : out std_logic_vector(4 downto 0);
@@ -46,10 +46,10 @@ entity PipelineReg is
         o_lw_mem : out std_logic;
         wd_mem : out std_logic_vector(31 downto 0);
         o_taken_ex : out std_logic;
-        o_taken_id : out std_logic;
         o_Branch : out std_logic_vector(31 downto 0);
         o_brinst_ex : out std_logic_vector(3 downto 0);
-        o_brinst_mem : out std_logic_vector(3 downto 0));
+        o_brinst_mem : out std_logic_vector(3 downto 0);
+        o_jump : out std_logic_vector(1 downto 0));
 end PipelineReg;
 
 architecture structural of PipelineReg is
@@ -88,10 +88,10 @@ architecture structural of PipelineReg is
     signal ovforward : std_logic;
     signal if_reset : std_logic;
     signal id_reset : std_logic;
-    signal takenforward : std_logic;
     signal br_o : std_logic_vector(31 downto 0);
-    signal brforward : std_logic_vector(31 downto 0);
     signal branchforward : std_logic_vector(3 downto 0);
+    signal jumpr : std_logic;
+    signal jmp_new : std_logic_vector(1 downto 0);
 begin
     
     --IF/ID
@@ -129,11 +129,11 @@ begin
 
     --EX controls
     EXControl : RegNBit --sel_y, rs_sel, ivu_sel, astype, shdir, alu_sel_2,1,0
-    generic MAP(N => 8)
+    generic MAP(N => 10)
     port MAP(clk => clk,
             reset => id_reset,
             we => '1',
-            data => Control(15 downto 8),
+            data => Control(17 downto 8),
             o_data => o_ex);
 
     --MEM controls
@@ -206,22 +206,6 @@ begin
             we => '1',
             data => pc4forward1,
             o_data => pc4forward2);
-
-    --Branch taken in ID
-    IDTaken : dffg
-    port MAP(i_CLK => clk,
-            i_RST => id_reset,
-            i_WE => '1',
-            i_D => taken_id,
-            o_Q => takenforward);
-
-    --Calculated Branch Addr
-    BrReg : RegNBit
-    port MAP(clk => clk,
-            reset => id_reset,
-            we => '1',
-            data => CalcBr,
-            o_data => brforward);
 
     --Branch Control
     BrCtl : RegNBit
@@ -317,23 +301,15 @@ begin
     BrCtl2 : RegNBit
     generic MAP(N => 4)
     port MAP(clk => clk,
-            reset => id_reset,
+            reset => reset,
             we => '1',
             data => branchforward,
             o_data => o_brinst_mem);
 
-    --Branch taken in ID
-    IDTaken2 : dffg
-    port MAP(i_CLK => clk,
-            i_RST => id_reset,
-            i_WE => '1',
-            i_D => takenforward,
-            o_Q => o_taken_id);
-
     --Branch taken in EX
     EXTaken : dffg
     port MAP(i_CLK => clk,
-            i_RST => id_reset,
+            i_RST => reset,
             i_WE => '1',
             i_D => taken_ex,
             o_Q => o_taken_ex);
@@ -341,15 +317,23 @@ begin
     --Caculated Branch Addr
     BrReg2 : RegNBit
     port MAP(clk => clk,
-            reset => id_reset,
+            reset => reset,
             we => '1',
-            data => brforward,
+            data => CalcBr,
             o_data => br_o);
 
     with pc_re_sel select
         o_Branch <= pc4forward3 when '0',
                     br_o when '1',
                     x"00000000" when others;
+
+    Jump1 : RegNBit
+    generic MAP(N => 2)
+    port MAP(clk => clk,
+            reset => reset,
+            we => '1',
+            data => jump,
+            o_data => o_jump);
 
     --MEM/WB
     --WB Controls
@@ -412,6 +396,6 @@ begin
             data => pc4forward3,
             o_data => o_PC4_wb);
 
-    o_halt <= Control(0) or wbforward1(0) or wbforward2(0) or wb3(0);
+    o_halt <= wbforward2(0) or wb3(0);
 
 end structural;

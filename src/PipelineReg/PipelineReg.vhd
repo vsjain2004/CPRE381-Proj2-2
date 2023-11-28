@@ -128,7 +128,7 @@ begin
             o_data => o_Inst_ex);
 
     --EX controls
-    EXControl : RegNBit --sel_y, rs_sel, ivu_sel, astype, shdir, alu_sel_2,1,0
+    EXControl : RegNBit --pc_sel_1, pc_sel_0, sel_y, rs_sel, ivu_sel, astype, shdir, alu_sel_2,1,0
     generic MAP(N => 10)
     port MAP(clk => clk,
             reset => id_reset,

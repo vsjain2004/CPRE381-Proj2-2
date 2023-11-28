@@ -158,8 +158,9 @@ end mixed;
 -- if(ex inst = jump)
 --      flush if = 1
 --      flush_id = 1
---      pc_re = 1
---      pc_re_sel = 1
+--      if(jr or jalr)
+--          pc_re = 1
+--          pc_re_sel = 1
 -- if(ex.inst = branch and ex.taken_ex)
 --      flush_if = 1
 --      flush_id = 1

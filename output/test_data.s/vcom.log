@@ -1,0 +1,68 @@
+QuestaSim-64 vcom 2023.2_2 Compiler 2023.06 Jun  9 2023
+Start time: 17:03:45 on Nov 28,2023
+vcom -2008 -work internal/ModelSimContainer/work proj/src/MIPS_types.vhd internal/testpy/tb.vhd proj/src/MIPS_types.vhd proj/src/TopLevel/mem.vhd proj/src/TopLevel/MIPS_Processor.vhd proj/src/Control/Decoder6t64.vhd proj/src/Control/Control.vhd proj/src/RegFile/Decoder5t32.vhd proj/src/RegFile/mux32t1_array.vhd proj/src/RegFile/RegNBit.vhd proj/src/RegFile/RegFile.vhd proj/src/RegFile/dffg.vhd proj/src/Hazard/HF.vhd proj/src/ALU/ALU.vhd proj/src/ALU/LUI.vhd proj/src/ALU/Xor_32.vhd proj/src/ALU/CLA_8_ext.vhd proj/src/ALU/Or_32.vhd proj/src/ALU/Nor_32.vhd proj/src/ALU/Shifter.vhd proj/src/ALU/And_32.vhd proj/src/ALU/Neg_ext.vhd proj/src/ALU/CLA_32.vhd proj/src/PipelineReg/PipelineReg.vhd proj/src/Extender/extend1632.vhd proj/src/PC/PC.vhd 
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Compiling package MIPS_types
+-- Compiling package body MIPS_types
+-- Loading package MIPS_types
+-- Loading package std_logic_textio
+-- Loading package ENV
+-- Compiling entity tb
+-- Compiling architecture mixed of tb
+** Warning: proj/src/MIPS_types.vhd(15): (vcom-1615) Existing package 'MIPS_types' at line 15 will be overwritten.
+-- Compiling package MIPS_types
+** Warning: proj/src/MIPS_types.vhd(32): (vcom-1615) Existing package body 'MIPS_types(body)' at line 32 will be overwritten.
+-- Compiling package body MIPS_types
+-- Loading package MIPS_types
+-- Loading package NUMERIC_STD
+-- Compiling entity mem
+-- Compiling architecture rtl of mem
+-- Loading package MIPS_types
+-- Compiling entity MIPS_Processor
+-- Compiling architecture structure of MIPS_Processor
+-- Compiling entity Decoder6t64
+-- Compiling architecture dataflow of Decoder6t64
+-- Compiling entity Control
+-- Compiling architecture structural of Control
+-- Compiling entity Decoder5t32
+-- Compiling architecture dataflow of Decoder5t32
+-- Compiling entity mux32t1_array
+-- Compiling architecture dataflow of mux32t1_array
+-- Compiling entity RegNBit
+-- Compiling architecture structural of RegNBit
+-- Compiling entity RegFile
+-- Compiling architecture structural of RegFile
+-- Compiling entity dffg
+-- Compiling architecture mixed of dffg
+-- Compiling entity HF
+-- Compiling architecture mixed of HF
+-- Compiling entity ALU
+-- Compiling architecture structural of ALU
+-- Compiling entity LUI
+-- Compiling architecture dataflow of LUI
+-- Compiling entity Xor_32
+-- Compiling architecture dataflow of Xor_32
+-- Compiling entity CLA_8_ext
+-- Compiling architecture dataflow of CLA_8_ext
+-- Compiling entity Or_32
+-- Compiling architecture dataflow of Or_32
+-- Compiling entity Nor_32
+-- Compiling architecture dataflow of Nor_32
+-- Compiling entity Shifter
+-- Compiling architecture dataflow of Shifter
+-- Compiling entity And_32
+-- Compiling architecture dataflow of And_32
+-- Compiling entity Neg_ext
+-- Compiling architecture dataflow of Neg_ext
+-- Compiling entity CLA_32
+-- Compiling architecture structural of CLA_32
+-- Compiling entity PipelineReg
+-- Compiling architecture structural of PipelineReg
+-- Compiling entity extend1632
+-- Compiling architecture dataflow of extend1632
+-- Compiling entity PC
+-- Compiling architecture structural of PC
+End time: 17:03:45 on Nov 28,2023, Elapsed time: 0:00:00
+Errors: 0, Warnings: 2

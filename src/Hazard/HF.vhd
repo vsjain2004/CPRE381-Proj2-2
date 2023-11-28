@@ -49,22 +49,22 @@ begin
     mem_rd_z <= not (mem_rd(0) or mem_rd(1) or mem_rd(2) or mem_rd(3) or mem_rd(4));
     id_break <= (not id_inst(31)) and (not id_inst(30)) and (not id_inst(29)) and (not id_inst(28)) and id_inst(27) and (not id_inst(26)) and (not id_inst(5)) and (not id_inst(4)) and id_inst(3) and id_inst(2) and (not id_inst(1)) and id_inst(0);
     id_halt <= (not id_inst(31)) and id_inst(30) and (not id_inst(29)) and id_inst(28) and (not id_inst(27)) and (not id_inst(26));
-    ex_rd_rs <= ex_wb(0) and (ex_rd(0) xnor id_inst(21)) and (ex_rd(1) xnor id_inst(22)) and (ex_rd(2) xnor id_inst(23)) and (ex_rd(3) xnor id_inst(24)) and (ex_rd(4) xnor id_inst(25));
-    ex_rd_rt <= ex_wb(0) and (ex_rd(0) xnor id_inst(16)) and (ex_rd(1) xnor id_inst(17)) and (ex_rd(2) xnor id_inst(18)) and (ex_rd(3) xnor id_inst(19)) and (ex_rd(4) xnor id_inst(20));
-    mem_rd_rs <= mem_wb(0) and (mem_rd(0) xnor id_inst(21)) and (mem_rd(1) xnor id_inst(22)) and (mem_rd(2) xnor id_inst(23)) and (mem_rd(3) xnor id_inst(24)) and (mem_rd(4) xnor id_inst(25));
-    mem_rd_rt <= mem_wb(0) and (mem_rd(0) xnor id_inst(16)) and (mem_rd(1) xnor id_inst(17)) and (mem_rd(2) xnor id_inst(18)) and (mem_rd(3) xnor id_inst(19)) and (mem_rd(4) xnor id_inst(20));
+    ex_rd_rs <= (ex_rd(0) xnor id_inst(21)) and (ex_rd(1) xnor id_inst(22)) and (ex_rd(2) xnor id_inst(23)) and (ex_rd(3) xnor id_inst(24)) and (ex_rd(4) xnor id_inst(25));
+    ex_rd_rt <= (ex_rd(0) xnor id_inst(16)) and (ex_rd(1) xnor id_inst(17)) and (ex_rd(2) xnor id_inst(18)) and (ex_rd(3) xnor id_inst(19)) and (ex_rd(4) xnor id_inst(20));
+    mem_rd_rs <= (mem_rd(0) xnor id_inst(21)) and (mem_rd(1) xnor id_inst(22)) and (mem_rd(2) xnor id_inst(23)) and (mem_rd(3) xnor id_inst(24)) and (mem_rd(4) xnor id_inst(25));
+    mem_rd_rt <= (mem_rd(0) xnor id_inst(16)) and (mem_rd(1) xnor id_inst(17)) and (mem_rd(2) xnor id_inst(18)) and (mem_rd(3) xnor id_inst(19)) and (mem_rd(4) xnor id_inst(20));
     if_1 <= not(ex_rd_z and mem_rd_z);
     if_2 <= not (id_break or id_halt);
     if_3 <= (ex_wb(2) or ex_wb(1) or mem_wb(2) or mem_wb(1) or (lw and (ex_rd_rs or ex_rd_rt))) and (not jump(0));
-    if_4 <= ex_rd_rs or ex_rd_rt or mem_rd_rs or mem_rd_rt;
+    if_4 <= (((ex_rd_rs or ex_rd_rt) and (ex_wb(2) or ex_wb(1))) or ((mem_rd_rs or mem_rd_rt) and (mem_wb(2) or mem_wb(1)))) or (((ex_rd_rs or ex_rd_rt) and ex_wb(0)) or ((mem_rd_rs or mem_rd_rt) and mem_wb(0)));
     branching <= branch(0) or branch(1) or branch(2) or branch(3);
 
-    sel_rsd_pre <= "01" when (if_1 and if_2 and (not if_3) and ex_rd_rs) else
-               "10" when (if_1 and if_2 and (not if_3) and mem_rd_rs) else
+    sel_rsd_pre <= "01" when (if_1 and if_2 and (not if_3) and ex_rd_rs and ex_wb(0)) else
+               "10" when (if_1 and if_2 and (not if_3) and mem_rd_rs and mem_wb(0)) else
                "00";
 
-    sel_rtd_pre <= "01" when (if_1 and if_2 and (not if_3) and ex_rd_rt) else
-               "10" when (if_1 and if_2 and (not if_3) and mem_rd_rt) else
+    sel_rtd_pre <= "01" when (if_1 and if_2 and (not if_3) and ex_rd_rt and ex_wb(0)) else
+               "10" when (if_1 and if_2 and (not if_3) and mem_rd_rt and mem_wb(0)) else
                "00";
 
     flush_if_pre <= (if_1 and if_2 and if_3 and if_3 and if_4) or jump(0) or (branching and taken_ex);
@@ -145,7 +145,7 @@ end mixed;
 --                  flush_id = 1
 --                  pc_re = 1 (set pc input linkr to ex.pc4 and pc_sel to 01)
 --                  if(mem inst = movn or movz and ex inst branch and ex.taken_ex)
---                      pc_re_sel = 1
+--                      pc_re_sel = 1 (Use ex.CalcBr instead of ex.pc4)
 --         else
 --              if(ex.rd = id.rs and ex.regwe)
 --                  sel_rsd = 01

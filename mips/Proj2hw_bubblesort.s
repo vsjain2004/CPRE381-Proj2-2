@@ -12,9 +12,8 @@ ori $t0, $t0, 4 # Set $t0 to &num
 lw $t1, -4($t0) # Load N into $t1
 addi $t1, $t1, -1
 
-# Set variables i ($t2) to -1, j*4 ($t3) to -4
+# Set variables i ($t2) to -1
 addi $t2, $0, -1
-addi $t3, $0, -4
 
 outer:
 # Check for outer loop
@@ -24,6 +23,8 @@ beq $t7, $0, Exit
 
 add $t4, $0, $0 # Set swapRequired ($t4) to 0 (false)
 sub $t5, $t1, $t2 # Set $t5 to N-i-1
+sll $t5, $t5, 2 # Multiply $t5 by 4
+addi $t3, $0, -4 # Set j*4 ($t3) to -4
 
 inner:
 # Check for inner loop
